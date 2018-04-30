@@ -1,4 +1,8 @@
 import React from "react";
+import { handleResponse } from "../../helpers";
+import { API_URL } from "../../config";
+import Loading from "../common/Loading";
+import "./Table.css"
 
 class List extends React.Component {
 
@@ -17,43 +21,101 @@ class List extends React.Component {
 
 	componentDidMount() {
 
-		fetch('https://api.udilia.com/coins/v1/cryptocurrencies?page=1&perPage=20')
+		this.setState({ loading : true });
 
-		    .then(response => {
+		fetch(API_URL + '/cryptocurrencies?page=1&perPage=20')
 
-		      return response.json().then(json => {
-
-		        return response.ok ? json : Promise.reject(json);
-
-		      });
-
-		    })
+		    .then(handleResponse)
 
 		    .then((data) => {
 
-		      console.log('Success', data);
+		     	this.setState({ 
+			     	currencies : data.currencies,
+			     	loading: false  
+		     	})
+
 
 		    })
 
 		    .catch((error) => {
 
-		      console.log('Error', error);
+		      	this.setState({ 
+		      		error: error.errorMessage, 
+		      		loading: false 
+		      	})
 
 		    });
 
 	}
 
-	render() {
+	renderChangePercent(percent) {
 
-		if (this.state.loading) {
+		if (percent > 0) {
 
-			return <div>Loading...</div>
+			return <span className="percent-raised">{percent} % &uarr; </span>
 
 		}
 
-		return(
+		if (percent < 0) {
 
-			<div>Text</div>
+			return <span className="percent-fallen">{percent} % &darr; </span>
+
+		}
+
+		return <span>{percent}</span>
+
+
+	}
+
+	render() {
+
+		const { loading, error, currencies } = this.state;
+
+		if (loading) {
+
+			return <div className = "loading-container"><Loading /></div>
+
+		}
+
+		if(error) {
+
+			return <div className = "error"> {error} </div>
+
+		}
+
+		return (
+
+			<div className = "Table-container">
+				<table className="Table">
+					<thead className="Table-head">
+						<tr>
+							<th>Cryptocurrency</th>
+							<th>Price</th>
+							<th>Market Cap</th>
+							<th>24H Change</th>
+						</tr>
+					</thead>
+					<tbody className = "Table-body">
+						{currencies.map((currency) => (
+							<tr key={currency.id}>
+								<td>
+									<span className ="Table-rank">{currency.rank}</span>
+									{currency.name}
+								</td>
+								<td>
+									<span className = "Table-dollar"> $ {currency.price}</span>
+								</td>
+								<td>
+									<span className = "Table-dollar"> $ {currency.marketCap}</span>
+								</td>
+								<td>
+									{this.renderChangePercent(currency.percentChange24h)}
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
 
 		)
 
